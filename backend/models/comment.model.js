@@ -1,54 +1,67 @@
-const db = require('../config/db.config');
+const { DataTypes } = require('sequelize');
+const sequelize = require('../config/db.config');
+const User = require('./user.model');
+const Publication = require('./publication.model');
 
-// Modèle Comment
-const Comment = {
-  // Récupérer tous les commentaires d'une publication
-  findByPublicationId: async (publicationId) => {
-    const [rows] = await db.query(`
-      SELECT c.*, u.username as author_name 
-      FROM comments c 
-      JOIN users u ON c.user_id = u.id 
-      WHERE c.publication_id = ? 
-      ORDER BY c.created_at DESC
-    `, [publicationId]);
-    return rows;
+// Définition du modèle Comment avec Sequelize
+const Comment = sequelize.define('Comment', {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
   },
-
-  // Trouver un commentaire par ID
-  findById: async (id) => {
-    const [rows] = await db.query(`
-      SELECT c.*, u.username as author_name 
-      FROM comments c 
-      JOIN users u ON c.user_id = u.id 
-      WHERE c.id = ?
-    `, [id]);
-    return rows[0];
+  content: {
+    type: DataTypes.TEXT,
+    allowNull: false
   },
-
-  // Créer un nouveau commentaire
-  create: async (commentData) => {
-    const { content, user_id, publication_id } = commentData;
-    const [result] = await db.query(
-      'INSERT INTO comments (content, user_id, publication_id) VALUES (?, ?, ?)',
-      [content, user_id, publication_id]
-    );
-    return { id: result.insertId, ...commentData, created_at: new Date() };
+  user_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: User,
+      key: 'id'
+    }
   },
-
-  // Mettre à jour un commentaire
-  update: async (id, commentData) => {
-    const { content } = commentData;
-    await db.query(
-      'UPDATE comments SET content = ? WHERE id = ?',
-      [content, id]
-    );
-    return { id, ...commentData };
+  publication_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: Publication,
+      key: 'id'
+    }
   },
-
-  // Supprimer un commentaire
-  delete: async (id) => {
-    return db.query('DELETE FROM comments WHERE id = ?', [id]);
+  created_at: {
+    type: DataTypes.DATE,
+    defaultValue: DataTypes.NOW
+  },
+  updated_at: {
+    type: DataTypes.DATE,
+    defaultValue: DataTypes.NOW
   }
-};
+}, {
+  tableName: 'comments',
+  timestamps: false // Désactive les timestamp automatiques de Sequelize
+});
+
+// Définir les relations
+Comment.belongsTo(User, {
+  foreignKey: 'user_id',
+  as: 'author'
+});
+
+Comment.belongsTo(Publication, {
+  foreignKey: 'publication_id',
+  as: 'publication'
+});
+
+User.hasMany(Comment, {
+  foreignKey: 'user_id',
+  as: 'comments'
+});
+
+Publication.hasMany(Comment, {
+  foreignKey: 'publication_id',
+  as: 'comments'
+});
 
 module.exports = Comment;

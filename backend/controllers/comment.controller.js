@@ -1,6 +1,6 @@
-const Comment = require('../models/sequelize/comment.model');
-const User = require('../models/sequelize/user.model');
-const Publication = require('../models/sequelize/publication.model');
+const Comment = require('../models/comment.model');
+const User = require('../models/user.model');
+const Publication = require('../models/publication.model');
 
 // Contrôleur pour les commentaires
 const CommentController = {
@@ -60,25 +60,22 @@ const CommentController = {
     }
   },
 
-  // Créer un nouveau commentaire
+  // Créer un nouveau commentaire - Requiert authentification
   create: async (req, res) => {
     try {
-      const { content, user_id, publication_id } = req.body;
+      const { content, publication_id } = req.body;
 
-      if (!content || !user_id || !publication_id) {
-        return res.status(400).json({ message: "Veuillez fournir un contenu, un ID utilisateur et un ID de publication" });
+      if (!content || !publication_id) {
+        return res.status(400).json({ message: "Veuillez fournir un contenu et un ID de publication" });
       }
+
+      // Utilise l'ID de l'utilisateur connecté depuis le middleware d'authentification
+      const user_id = req.user.id;
 
       // Vérifier que la publication existe
       const publication = await Publication.findByPk(publication_id);
       if (!publication) {
         return res.status(404).json({ message: "Publication non trouvée" });
-      }
-
-      // Vérifier que l'utilisateur existe
-      const user = await User.findByPk(user_id);
-      if (!user) {
-        return res.status(404).json({ message: "Utilisateur non trouvé" });
       }
 
       const newComment = await Comment.create({
@@ -108,7 +105,7 @@ const CommentController = {
     }
   },
 
-  // Mettre à jour un commentaire
+  // Mettre à jour un commentaire - Requiert authentification et vérification de propriété
   update: async (req, res) => {
     try {
       const { content } = req.body;
@@ -120,6 +117,11 @@ const CommentController = {
       const comment = await Comment.findByPk(req.params.id);
       if (!comment) {
         return res.status(404).json({ message: "Commentaire non trouvé" });
+      }
+
+      // Vérifier que l'utilisateur connecté est le propriétaire du commentaire
+      if (comment.user_id !== req.user.id) {
+        return res.status(403).json({ message: "Non autorisé à modifier ce commentaire" });
       }
 
       await comment.update({ content });
@@ -145,7 +147,7 @@ const CommentController = {
     }
   },
 
-  // Supprimer un commentaire
+  // Supprimer un commentaire - Requiert authentification et vérification de propriété
   delete: async (req, res) => {
     try {
       const comment = await Comment.findByPk(req.params.id);
@@ -153,8 +155,49 @@ const CommentController = {
         return res.status(404).json({ message: "Commentaire non trouvé" });
       }
 
+      // Vérifier que l'utilisateur connecté est le propriétaire du commentaire
+      if (comment.user_id !== req.user.id) {
+        return res.status(403).json({ message: "Non autorisé à supprimer ce commentaire" });
+      }
+
       await comment.destroy();
       res.json({ message: "Commentaire supprimé avec succès" });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  },
+
+  // Récupérer tous les commentaires de l'utilisateur connecté
+  getMyComments: async (req, res) => {
+    try {
+      const comments = await Comment.findAll({
+        where: { user_id: req.user.id },
+        include: [
+          {
+            model: User,
+            as: 'author',
+            attributes: ['id', 'username']
+          },
+          {
+            model: Publication,
+            as: 'publication',
+            attributes: ['id', 'title']
+          }
+        ],
+        order: [['created_at', 'DESC']]
+      });
+
+      // Formater les données
+      const formattedComments = comments.map(comment => {
+        const commentJson = comment.toJSON();
+        return {
+          ...commentJson,
+          author_name: commentJson.author ? commentJson.author.username : null,
+          publication_title: commentJson.publication ? commentJson.publication.title : null
+        };
+      });
+
+      res.json(formattedComments);
     } catch (error) {
       res.status(500).json({ message: error.message });
     }

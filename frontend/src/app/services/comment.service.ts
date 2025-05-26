@@ -20,6 +20,7 @@ export class CommentService {
     return this.http.get<Comment>(`${this.apiUrl}/${id}`);
   }
 
+  // Création d'un commentaire (authentification requise via l'intercepteur)
   createComment(comment: Comment): Observable<Comment> {
     return this.http.post<Comment>(this.apiUrl, comment);
   }

@@ -2,6 +2,11 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 
+// Import des routes
+const userRoutes = require('./routes/user.routes');
+const publicationRoutes = require('./routes/publication.routes');
+const commentRoutes = require('./routes/comment.routes');
+
 dotenv.config();
 
 const app = express();
@@ -25,7 +30,13 @@ app.get('/api/health', (req, res) => {
     });
 });
 
+// Enregistrement des routes API
+app.use('/api/users', userRoutes);
+app.use('/api/publications', publicationRoutes);
+app.use('/api/comments', commentRoutes);
+
 // Démarrage du serveur
 app.listen(port, () => {
     console.log(`Serveur démarré sur http://localhost:${port}`);
 });
+

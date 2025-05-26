@@ -1,5 +1,5 @@
-const Publication = require('../models/sequelize/publication.model');
-const User = require('../models/sequelize/user.model');
+const Publication = require('../models/publication.model');
+const User = require('../models/user.model');
 const { Op } = require('sequelize');
 
 // Contrôleur pour les publications
@@ -59,14 +59,17 @@ const PublicationController = {
     }
   },
 
-  // Créer une nouvelle publication
+  // Créer une nouvelle publication - Requiert authentification
   create: async (req, res) => {
     try {
-      const { title, content, user_id, location } = req.body;
+      const { title, content, location } = req.body;
 
-      if (!title || !content || !user_id) {
-        return res.status(400).json({ message: "Veuillez fournir un titre, un contenu et un ID utilisateur" });
+      if (!title || !content) {
+        return res.status(400).json({ message: "Veuillez fournir un titre et un contenu" });
       }
+
+      // Utilise l'ID de l'utilisateur connecté depuis le middleware d'authentification
+      const user_id = req.user.id;
 
       const newPublication = await Publication.create({
         title,
@@ -96,7 +99,7 @@ const PublicationController = {
     }
   },
 
-  // Mettre à jour une publication
+  // Mettre à jour une publication - Requiert authentification et vérification de propriété
   update: async (req, res) => {
     try {
       const { title, content, location } = req.body;
@@ -108,6 +111,11 @@ const PublicationController = {
       const publication = await Publication.findByPk(req.params.id);
       if (!publication) {
         return res.status(404).json({ message: "Publication non trouvée" });
+      }
+
+      // Vérifier que l'utilisateur connecté est le propriétaire de la publication
+      if (publication.user_id !== req.user.id) {
+        return res.status(403).json({ message: "Non autorisé à modifier cette publication" });
       }
 
       await publication.update({
@@ -137,12 +145,17 @@ const PublicationController = {
     }
   },
 
-  // Supprimer une publication
+  // Supprimer une publication - Requiert authentification et vérification de propriété
   delete: async (req, res) => {
     try {
       const publication = await Publication.findByPk(req.params.id);
       if (!publication) {
         return res.status(404).json({ message: "Publication non trouvée" });
+      }
+
+      // Vérifier que l'utilisateur connecté est le propriétaire de la publication
+      if (publication.user_id !== req.user.id) {
+        return res.status(403).json({ message: "Non autorisé à supprimer cette publication" });
       }
 
       await publication.destroy();
@@ -157,6 +170,34 @@ const PublicationController = {
     try {
       const publications = await Publication.findAll({
         where: { user_id: req.params.userId },
+        include: [{
+          model: User,
+          as: 'author',
+          attributes: ['id', 'username']
+        }],
+        order: [['created_at', 'DESC']]
+      });
+
+      // Formater les données pour correspondre à l'API précédente
+      const formattedPublications = publications.map(pub => {
+        const pubJson = pub.toJSON();
+        return {
+          ...pubJson,
+          author_name: pubJson.author ? pubJson.author.username : null
+        };
+      });
+
+      res.json(formattedPublications);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  },
+
+  // Récupérer les publications de l'utilisateur connecté
+  getMyPublications: async (req, res) => {
+    try {
+      const publications = await Publication.findAll({
+        where: { user_id: req.user.id },
         include: [{
           model: User,
           as: 'author',

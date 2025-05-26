@@ -1,12 +1,17 @@
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/user.controller');
+const auth = require('../middleware/auth');
 
-// Routes pour les utilisateurs
+// Routes publiques
+router.post('/register', userController.register);
+router.post('/login', userController.login);
 router.get('/', userController.getAll);
 router.get('/:id', userController.getOne);
-router.post('/', userController.create);
-router.put('/:id', userController.update);
-router.delete('/:id', userController.delete);
+
+// Routes protégées par authentification
+router.get('/me/profile', auth, userController.getCurrentUser);
+router.put('/:id', auth, userController.update);
+router.delete('/:id', auth, userController.delete);
 
 module.exports = router;

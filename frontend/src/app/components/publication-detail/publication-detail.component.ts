@@ -5,6 +5,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { Publication, Comment } from '../../models';
 import { PublicationService } from '../../services/publication.service';
 import { CommentService } from '../../services/comment.service';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-publication-detail',
@@ -38,8 +39,8 @@ import { CommentService } from '../../services/comment.service';
         <div class="comments-section mt-4">
           <h3>Commentaires ({{ comments.length }})</h3>
 
-          <!-- Formulaire pour ajouter un commentaire -->
-          <div class="card mb-4">
+          <!-- Formulaire pour ajouter un commentaire - visible uniquement si connecté -->
+          <div *ngIf="isLoggedIn" class="card mb-4">
             <div class="card-body">
               <h5 class="card-title">Ajouter un commentaire</h5>
               <form [formGroup]="commentForm" (ngSubmit)="onSubmitComment()">
@@ -59,6 +60,12 @@ import { CommentService } from '../../services/comment.service';
                 </button>
               </form>
             </div>
+          </div>
+
+          <!-- Message d'invitation à se connecter si non connecté -->
+          <div *ngIf="!isLoggedIn" class="alert alert-info mb-4">
+            <i class="fas fa-info-circle me-2"></i>
+            <a routerLink="/login" class="alert-link">Connectez-vous</a> pour ajouter un commentaire.
           </div>
 
           <!-- Liste des commentaires -->
@@ -99,14 +106,14 @@ export class PublicationDetailComponent implements OnInit {
   error = '';
   commentForm: FormGroup;
   submitting = false;
-
-  // Utilisateur temporaire (à remplacer par un système d'authentification plus tard)
-  currentUserId = 1;
+  isLoggedIn = false;
+  currentUser: any = null;
 
   constructor(
     private route: ActivatedRoute,
     private publicationService: PublicationService,
     private commentService: CommentService,
+    private authService: AuthService,
     private fb: FormBuilder
   ) {
     this.commentForm = this.fb.group({
@@ -115,6 +122,13 @@ export class PublicationDetailComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // Vérifier si l'utilisateur est connecté
+    this.authService.user$.subscribe(user => {
+      this.isLoggedIn = !!user;
+      this.currentUser = user;
+    });
+
+    // Charger les données de la publication
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.loadPublication(+id);
@@ -153,17 +167,17 @@ export class PublicationDetailComponent implements OnInit {
   }
 
   onSubmitComment(): void {
-    if (this.commentForm.invalid || !this.publication) return;
+    if (this.commentForm.invalid || !this.publication || !this.isLoggedIn) return;
 
     this.submitting = true;
     const newComment: Comment = {
       content: this.commentForm.value.content,
-      user_id: this.currentUserId,
       publication_id: this.publication.id
     } as Comment;
 
     this.commentService.createComment(newComment).subscribe({
       next: (comment) => {
+        // Ajouter le nouveau commentaire au début de la liste
         this.comments.unshift(comment);
         this.commentForm.reset();
         this.submitting = false;
@@ -171,6 +185,12 @@ export class PublicationDetailComponent implements OnInit {
       error: (err) => {
         console.error('Erreur lors de l\'ajout du commentaire:', err);
         this.submitting = false;
+        // Si l'erreur est due à un problème d'authentification, rediriger vers la page de connexion
+        if (err.status === 401) {
+          this.error = 'Vous devez être connecté pour ajouter un commentaire.';
+        } else {
+          this.error = 'Une erreur est survenue lors de l\'ajout du commentaire.';
+        }
       }
     });
   }

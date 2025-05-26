@@ -1,65 +1,56 @@
-const db = require('../config/db.config');
+const { DataTypes } = require('sequelize');
+const sequelize = require('../config/db.config');
+const User = require('./user.model');
 
-// Modèle Publication
-const Publication = {
-  // Récupérer toutes les publications
-  findAll: async () => {
-    const [rows] = await db.query(`
-      SELECT p.*, u.username as author_name 
-      FROM publications p 
-      JOIN users u ON p.user_id = u.id 
-      ORDER BY p.created_at DESC
-    `);
-    return rows;
+// Définition du modèle Publication avec Sequelize
+const Publication = sequelize.define('Publication', {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
   },
-
-  // Trouver une publication par ID
-  findById: async (id) => {
-    const [rows] = await db.query(`
-      SELECT p.*, u.username as author_name 
-      FROM publications p 
-      JOIN users u ON p.user_id = u.id 
-      WHERE p.id = ?
-    `, [id]);
-    return rows[0];
+  title: {
+    type: DataTypes.STRING(100),
+    allowNull: false
   },
-
-  // Créer une nouvelle publication
-  create: async (pubData) => {
-    const { title, content, user_id, location } = pubData;
-    const [result] = await db.query(
-      'INSERT INTO publications (title, content, user_id, location) VALUES (?, ?, ?, ?)',
-      [title, content, user_id, location]
-    );
-    return { id: result.insertId, ...pubData, created_at: new Date() };
+  content: {
+    type: DataTypes.TEXT,
+    allowNull: false
   },
-
-  // Mettre à jour une publication
-  update: async (id, pubData) => {
-    const { title, content, location } = pubData;
-    await db.query(
-      'UPDATE publications SET title = ?, content = ?, location = ? WHERE id = ?',
-      [title, content, location, id]
-    );
-    return { id, ...pubData };
+  location: {
+    type: DataTypes.STRING(100),
+    allowNull: true
   },
-
-  // Supprimer une publication
-  delete: async (id) => {
-    return db.query('DELETE FROM publications WHERE id = ?', [id]);
+  user_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: User,
+      key: 'id'
+    }
   },
-
-  // Récupérer les publications d'un utilisateur
-  findByUserId: async (userId) => {
-    const [rows] = await db.query(`
-      SELECT p.*, u.username as author_name 
-      FROM publications p 
-      JOIN users u ON p.user_id = u.id 
-      WHERE p.user_id = ?
-      ORDER BY p.created_at DESC
-    `, [userId]);
-    return rows;
+  created_at: {
+    type: DataTypes.DATE,
+    defaultValue: DataTypes.NOW
+  },
+  updated_at: {
+    type: DataTypes.DATE,
+    defaultValue: DataTypes.NOW
   }
-};
+}, {
+  tableName: 'publications',
+  timestamps: false // Désactive les timestamp automatiques de Sequelize
+});
+
+// Définir la relation avec User
+Publication.belongsTo(User, {
+  foreignKey: 'user_id',
+  as: 'author'
+});
+
+User.hasMany(Publication, {
+  foreignKey: 'user_id',
+  as: 'publications'
+});
 
 module.exports = Publication;

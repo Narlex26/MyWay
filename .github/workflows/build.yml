@@ -16,6 +16,7 @@ jobs:
       - name: create bdd
         uses: mirromutth/mysql-action@v1.1
         with:
+          mysql database: myway_db
           mysql root password: root
           mysql user: 'developer'
           mysql password: root

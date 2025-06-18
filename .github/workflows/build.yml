@@ -21,9 +21,12 @@ jobs:
       - name: Set up Node.js    
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
           check-latest: false
           
+      - name: install dependancies   
+        run:  npm install
+        working-directory: frontend
+
       - name: install dependancies   
         run:  npm install
         working-directory: backend

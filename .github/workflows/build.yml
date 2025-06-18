@@ -13,6 +13,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: create bdd
+        uses: mirromutth/mysql-action@v1.1
       - name: clone repository dans le runner
         uses: actions/checkout@v4
         with:
@@ -30,7 +32,8 @@ jobs:
       - name: build frontend
         run: npm run  build
         working-directory: frontend
-        
+      
+     
       - name: install dependancies   
         run:  npm install
         working-directory: backend

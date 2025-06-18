@@ -29,7 +29,8 @@ jobs:
 
       - name: build frontend
         run: npm build
-
+        working-directory: frontend
+        
       - name: install dependancies   
         run:  npm install
         working-directory: backend

@@ -28,7 +28,7 @@ jobs:
         working-directory: frontend
 
       - name: build frontend
-        run: npm build
+        run: npm run  build
         working-directory: frontend
         
       - name: install dependancies   

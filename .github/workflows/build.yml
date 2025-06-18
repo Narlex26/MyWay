@@ -24,7 +24,7 @@ jobs:
           node-version: '20'
           check-latest: false
 
-      - name: install dependencies
+      
       - run:  npm install
       - working-directory: back-end
 

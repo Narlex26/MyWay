@@ -37,6 +37,7 @@ jobs:
 
       - name: build  backend
         run: npm start
+        working-directory: backend
 
       - uses: SonarSource/sonarqube-scan-action@v4
         env:

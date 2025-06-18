@@ -15,6 +15,10 @@ jobs:
     steps:
       - name: create bdd
         uses: mirromutth/mysql-action@v1.1
+        with:
+          mysql root password: root
+          mysql user: 'developer'
+          mysql password: root
       - name: clone repository dans le runner
         uses: actions/checkout@v4
         with:

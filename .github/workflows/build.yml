@@ -27,9 +27,15 @@ jobs:
         run:  npm install
         working-directory: frontend
 
+      - name: build frontend
+        run: npm build
+
       - name: install dependancies   
         run:  npm install
         working-directory: backend
+
+      - name: build  backend
+        run: npm build
 
       - uses: SonarSource/sonarqube-scan-action@v4
         env:

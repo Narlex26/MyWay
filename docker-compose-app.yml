@@ -16,7 +16,7 @@ services:
       dockerfile: Dockerfile
     container_name: backend
     environment:
-      - DB_HOST=mysql-db
+      - DB_HOST=db
       - DB_USER=root
       - DB_PASSWORD=root
       - DB_NAME=my_way_db

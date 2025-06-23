@@ -7,7 +7,8 @@ services:
       dockerfile: Dockerfile
     container_name: frontend
     ports:
-      - "8080:80"
+      - "4200:4200"
+    command: npm start -- --host 0.0.0.0
     depends_on:
       - backend
 

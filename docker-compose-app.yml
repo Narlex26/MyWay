@@ -7,8 +7,8 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: my_way_db
-      MYSQL_USER: root
-      MYSQL_PASSWORD: root
+      # MYSQL_USER: root
+      # MYSQL_PASSWORD: root
     volumes:
       - db_data:/var/lib/mysql
       - ./backend/db/init_remote_db.sql:/docker-entrypoint-initdb.d/init_remote_db.sql
@@ -20,7 +20,8 @@ services:
     container_name: backend
     environment:
       - DB_HOST=mysql-db
-      - DB_USER=my_way
+      - DB_USER=root
+      - DB_PASSWORD=root
       - DB_NAME=my_way_db
     ports:
       - "3000:3000"

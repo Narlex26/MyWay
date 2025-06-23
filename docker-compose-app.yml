@@ -40,7 +40,7 @@ services:
       - "3306:3306"
     volumes:
       - db_data:/var/lib/mysql
-      - ./backend/db/init-db/init_remote_db.sql:/docker-entrypoint-initdb.d/init_remote_db.sql
+      - ./backend/db/init_remote_db.sql:/docker-entrypoint-initdb.d/init_remote_db.sql
 
 volumes:
   db_data:

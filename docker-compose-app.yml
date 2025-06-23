@@ -1,8 +1,6 @@
 services:
   db:
-    build:
-      context: ./backend/db
-      dockerfile: Dockerfile
+    image: mysql:8.3
     container_name: mysql-db
     ports:
       - "3306:3306"

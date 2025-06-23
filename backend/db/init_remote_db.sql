@@ -71,5 +71,6 @@ CREATE INDEX idx_user_publications ON publications(user_id);
 CREATE INDEX idx_publication_comments ON comments(publication_id);
 
 -- Accorder tous les privilèges à l'utilisateur my_way
+CREATE USER IF NOT EXISTS 'my_way'@'%' IDENTIFIED BY 'my_way';
 GRANT ALL PRIVILEGES ON my_way_db.* TO 'my_way'@'%' IDENTIFIED BY 'my_way';
 FLUSH PRIVILEGES;

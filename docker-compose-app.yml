@@ -4,13 +4,13 @@ services:
       context: ./backend/db
       dockerfile: Dockerfile
     container_name: mysql-db
+    ports:
+      - "3306:3306"
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: my_way_db
       MYSQL_USER: root
       MYSQL_PASSWORD: root
-    ports:
-      - "3306:3306"
     volumes:
       - db_data:/var/lib/mysql
       - ./backend/db/init_remote_db.sql:/docker-entrypoint-initdb.d/init_remote_db.sql
